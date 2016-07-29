@@ -1,0 +1,39 @@
+#!/usr/bin/env python
+
+from datetime import datetime
+from json import dumps, JSONEncoder
+
+# datetime objects don't get encoded properly, by default let's take care of
+# that with a custom plugin
+class CustomEncoder(JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        if isinstance(obj, Exception):
+            return unicode(obj)
+        return JSONEncoder.default(self, obj)
+jsonify = lambda s: dumps(s, cls=CustomEncoder)
+
+
+def make_record(w):
+    return dict(dt=datetime.now().strftime('%Y-%m-%d'), wt=w)
+
+
+def record_weight(destfile, w):
+    from json import dumps
+    with open(destfile, 'a+') as f:
+        j = jsonify(make_record(w))
+        print(j)
+        f.write(j)
+        f.write('\n')
+
+
+if __name__ == '__main__':
+    import sys
+    if len(sys.argv) < 3:
+        raise SystemExit(
+            'usage: {} datfile <some_numeric_weight>'.format(sys.argv[0]) )
+    destfile = sys.argv[1]
+    record_weight(destfile, float(sys.argv[2]))
+
+
